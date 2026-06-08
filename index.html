@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AssignFlow - ระบบจัดการการส่งการบ้านและโครงงาน</title>
+  <!-- Google Fonts: Inter & Prompt (Thai support) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Glows for visual premium feel -->
+  <div class="glow-bg-1"></div>
+  <div class="glow-bg-2"></div>
+
+  <!-- Main App Container -->
+  <div class="app-container">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-square-poll-horizontal"></i>
+        </div>
+        <div class="brand-text">
+          <h1>AssignFlow</h1>
+          <span>Portal</span>
+        </div>
+      </div>
+
+      <!-- Role Switcher -->
+      <div class="role-switcher-container">
+        <button id="role-teacher-btn" class="role-btn active" onclick="switchRole('teacher')">
+          <i class="fa-solid fa-chalkboard-user"></i> ผู้สอน (Teacher)
+        </button>
+        <button id="role-student-btn" class="role-btn" onclick="switchRole('student')">
+          <i class="fa-solid fa-user-graduate"></i> ผู้เรียน (Student)
+        </button>
+      </div>
+
+      <!-- Current Time Display in Navbar -->
+      <div class="nav-time-display">
+        <span class="time-label"><i class="fa-regular fa-clock"></i> เวลาของระบบ:</span>
+        <span id="nav-current-time" class="time-value">--:--:--</span>
+        <span id="nav-sim-badge" class="badge-sim-status simulated-only hidden">SIMULATED</span>
+      </div>
+    </header>
+
+    <!-- Main Content Panels -->
+    <main class="content-wrapper">
+
+      <!-- ================= TEACHER DASHBOARD ================= -->
+      <section id="teacher-dashboard" class="dashboard-panel">
+        <div class="grid-layout-top">
+          <!-- Left: Create Assignment Form -->
+          <div class="glass-card form-card">
+            <h2 class="card-title"><i class="fa-solid fa-plus-circle"></i> สร้างช่องส่งงานใหม่</h2>
+            <form id="create-assignment-form" onsubmit="handleCreateAssignment(event)">
+              <div class="form-group">
+                <label for="assign-title">ชื่อหัวข้อ / ชื่องาน <span class="required">*</span></label>
+                <input type="text" id="assign-title" required placeholder="เช่น การบ้านบทที่ 1: เขียน HTML เบื้องต้น">
+              </div>
+
+              <div class="form-group">
+                <label for="assign-desc">รายละเอียดงาน / คำสั่งเพิ่มเติม</label>
+                <textarea id="assign-desc" rows="3" placeholder="ระบุสิ่งที่ต้องการให้ผู้เรียนทำ หรือ ลิงก์เอกสารเพิ่มเติม..."></textarea>
+              </div>
+
+              <div class="form-group row">
+                <div class="col-6">
+                  <label for="assign-deadline-date">วันที่กำหนดส่ง <span class="required">*</span></label>
+                  <input type="date" id="assign-deadline-date" required>
+                </div>
+                <div class="col-6">
+                  <label for="assign-deadline-time">เวลาส่ง <span class="required">*</span></label>
+                  <input type="time" id="assign-deadline-time" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">
+                <i class="fa-solid fa-paper-plane"></i> สร้างช่องส่งงาน
+              </button>
+            </form>
+          </div>
+
+          <!-- Right: Created Assignments Summary -->
+          <div class="glass-card list-card">
+            <h2 class="card-title"><i class="fa-solid fa-list-check"></i> รายการงานที่สร้างแล้ว</h2>
+            <div id="teacher-assignments-list" class="scrollable-list">
+              <!-- Dynamically populated -->
+              <div class="empty-state">
+                <i class="fa-regular fa-folder-open"></i>
+                <p>ยังไม่มีการสร้างช่องงานใดๆ</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom: Submissions Table -->
+        <div class="glass-card table-card full-width">
+          <div class="card-header-actions">
+            <h2 class="card-title"><i class="fa-solid fa-inbox"></i> ประวัติผู้ส่งงานทั้งหมด</h2>
+            <div class="filter-actions">
+              <label for="filter-assignment">เลือกดูงาน:</label>
+              <select id="filter-assignment" onchange="renderSubmissionsTable()">
+                <option value="all">ทั้งหมด</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="submission-table">
+              <thead>
+                <tr>
+                  <th>ชื่องาน</th>
+                  <th>ผู้ส่ง</th>
+                  <th>รายละเอียดงานที่ส่ง / ลิงก์</th>
+                  <th>เวลาที่ส่ง</th>
+                  <th>ความตรงต่อเวลา</th>
+                  <th>สถานะการตรวจ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="submissions-tbody">
+                <!-- Dynamically populated -->
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">ยังไม่มีประวัติการส่งงานเข้ามา</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STUDENT DASHBOARD ================= -->
+      <section id="student-dashboard" class="dashboard-panel hidden">
+        <div class="grid-layout-top">
+          <!-- Left: Submit Form -->
+          <div class="glass-card form-card">
+            <h2 class="card-title"><i class="fa-solid fa-file-arrow-up"></i> ส่งการบ้าน / โครงงาน</h2>
+            <form id="submit-assignment-form" onsubmit="handleSendSubmission(event)">
+              <div class="form-group">
+                <label for="submit-assign-select">เลือกงานที่ต้องการส่ง <span class="required">*</span></label>
+                <select id="submit-assign-select" required onchange="updateSelectedAssignmentInfo()">
+                  <!-- Dynamically populated -->
+                </select>
+                <div id="selected-assign-info" class="selected-assign-badge-info hidden">
+                  <!-- Realtime deadline and status of selection -->
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="submit-student-name">ชื่อ-นามสกุล ผู้ส่ง <span class="required">*</span></label>
+                <input type="text" id="submit-student-name" required placeholder="เช่น นายประหยัด พอเพียง">
+              </div>
+
+              <div class="form-group">
+                <label for="submit-content">คำตอบ / ลิงก์โครงงาน (เช่น GitHub, Google Drive) <span class="required">*</span></label>
+                <textarea id="submit-content" rows="4" required placeholder="พิมพ์ข้อความคำตอบ หรือแนบลิงก์ที่นี่..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="submit-file">แนบไฟล์เพิ่มเติม (ขนาดไม่เกิน 1.5MB - เก็บใน LocalStorage)</label>
+                <input type="file" id="submit-file" accept=".pdf,.png,.jpg,.jpeg,.zip,.txt,.docx,.xlsx">
+                <small class="text-muted" style="display:block; margin-top:0.25rem;"><i class="fa-solid fa-circle-info"></i> รองรับไฟล์ PDF, รูปภาพ, ZIP, หรือเอกสารทั่วไป</small>
+              </div>
+
+              <button type="submit" class="btn btn-success btn-block">
+                <i class="fa-solid fa-upload"></i> ส่งงานตอนนี้
+              </button>
+            </form>
+          </div>
+
+          <!-- Right: Pending Assignments List for Students -->
+          <div class="glass-card list-card">
+            <h2 class="card-title"><i class="fa-regular fa-clock"></i> งานที่มอบหมาย & วันสิ้นสุด (Deadline)</h2>
+            <div id="student-assignments-list" class="scrollable-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom: Personal Submission History -->
+        <div class="glass-card table-card full-width">
+          <h2 class="card-title"><i class="fa-solid fa-history"></i> ประวัติการส่งงานของคุณ</h2>
+          <div class="table-wrapper">
+            <table class="submission-table">
+              <thead>
+                <tr>
+                  <th>ชื่องาน</th>
+                  <th>รายละเอียดงานที่ส่ง / ลิงก์</th>
+                  <th>ส่งเมื่อ (จำลอง)</th>
+                  <th>ความตรงต่อเวลา</th>
+                  <th>สถานะตรวจงาน</th>
+                </tr>
+              </thead>
+              <tbody id="student-history-tbody">
+                <!-- Dynamically populated -->
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">ยังไม่มีประวัติการส่งงานของคุณในเบราว์เซอร์นี้</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- System Time Tester Collapsible Panel -->
+    <div id="time-tester-panel" class="time-tester-card minimized">
+      <div class="panel-header" onclick="toggleTimeTester()">
+        <span class="panel-title">
+          <i class="fa-solid fa-sliders text-primary"></i> 
+          <span>แผงทดสอบเวลาจำลอง (System Time Tester)</span>
+        </span>
+        <span class="toggle-icon"><i class="fa-solid fa-chevron-up"></i></span>
+      </div>
+      <div class="panel-content">
+        <p class="description">จำลองเวลาปัจจุบันของเบราว์เซอร์นี้ เพื่อทดสอบการส่งงานล่าช้า (Late Submission) และการเปลี่ยนนับถอยหลังของงานส่ง</p>
+        
+        <div class="form-group-flex">
+          <label class="switch-container">
+            <input type="checkbox" id="sim-time-enable" onchange="toggleSimTime(this.checked)">
+            <span class="slider round"></span>
+          </label>
+          <span class="switch-label">เปิดใช้งานเวลาจำลอง</span>
+        </div>
+
+        <div id="sim-controls" class="sim-controls-disabled">
+          <div class="form-group">
+            <label for="sim-datetime-input">เลือกวันที่และเวลาจำลอง</label>
+            <input type="datetime-local" id="sim-datetime-input" disabled onchange="setSimTimeFromInput(this.value)">
+          </div>
+
+          <div class="quick-buttons">
+            <button class="btn btn-sm btn-outline" onclick="adjustSimTime(5 * 60)" disabled><i class="fa-solid fa-plus"></i> 5 นาที</button>
+            <button class="btn btn-sm btn-outline" onclick="adjustSimTime(60 * 60)" disabled><i class="fa-solid fa-plus"></i> 1 ชม.</button>
+            <button class="btn btn-sm btn-outline" onclick="adjustSimTime(24 * 60 * 60)" disabled><i class="fa-solid fa-plus"></i> 1 วัน</button>
+            <button class="btn btn-sm btn-danger" onclick="resetSimTime()" disabled><i class="fa-solid fa-rotate-left"></i> รีเซ็ต</button>
+          </div>
+        </div>
+
+        <div class="current-sim-readout">
+          <div class="readout-row">
+            <span class="label">เวลาจำลอง:</span>
+            <span id="sim-time-display" class="value text-warning">ปิดการใช้งาน</span>
+          </div>
+          <div class="readout-row">
+            <span class="label">เวลาจริง:</span>
+            <span id="real-time-display" class="value">--:--:--</span>
+          </div>
+        </div>
+        
+        <button class="btn btn-sm btn-danger btn-block" style="margin-top: 0.5rem;" onclick="resetAllData()">
+          <i class="fa-solid fa-trash-can"></i> รีเซ็ตข้อมูลเป็นค่าเริ่มต้น
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Center -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Load JS -->
+  <script src="app.js"></script>
+</body>
+</html>
